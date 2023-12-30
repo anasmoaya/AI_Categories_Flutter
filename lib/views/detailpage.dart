@@ -12,14 +12,45 @@ class DetailPage extends StatelessWidget {
       appBar: AppBar(
         title: Text(activite.titre),
       ),
-      body: Column(
-        children: <Widget>[
-          Image.network(activite.imageUrl),
-          Text(activite.titre),
-          Text(activite.lieu),
-          Text("${activite.prix}€"),
-          // Autres détails ici
-        ],
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Image.network(activite.imageUrl, fit: BoxFit.cover, height: 250),
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    activite.titre,
+                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    'Lieu: ${activite.lieu}',
+                    style: TextStyle(fontSize: 18),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    'Prix: \$${activite.prix.toStringAsFixed(2)}',
+                    style: TextStyle(fontSize: 18),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    'Catégorie: ${activite.categorie}',
+                    style: TextStyle(fontSize: 18),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    'Nombre de personnes nécessaires: ${activite.nbPersonnes}',
+                    style: TextStyle(fontSize: 18),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

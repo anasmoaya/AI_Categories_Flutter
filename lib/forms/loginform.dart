@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:project_flutter_ai/userSession.dart';
 import 'package:project_flutter_ai/views/main_activity.dart';
 
 class LoginForm extends StatefulWidget {
@@ -73,7 +74,9 @@ class _LoginFormState extends State<LoginForm> {
   MaterialPageRoute(builder: (context) => MainActivity()),
 );
           _showSnackBar(context,"Login successful");
-          
+          UserSession.setUsername(_username);
+
+        
         } else {
           
 

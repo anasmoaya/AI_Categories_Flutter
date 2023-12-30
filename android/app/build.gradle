@@ -23,6 +23,9 @@ if (flutterVersionName == null) {
 }
 
 android {
+
+        
+
     namespace "com.example.project_flutter_ai"
     compileSdkVersion flutter.compileSdkVersion
     ndkVersion flutter.ndkVersion
@@ -38,6 +41,11 @@ android {
 
     sourceSets {
         main.java.srcDirs += 'src/main/kotlin'
+    }
+
+        aaptOptions {
+        noCompress 'tflite'
+        noCompress 'lite'
     }
 
     defaultConfig {

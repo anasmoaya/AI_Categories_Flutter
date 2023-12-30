@@ -1,63 +1,107 @@
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:project_flutter_ai/model/activite.dart';
 import 'package:project_flutter_ai/views/detailpage.dart';
 
-Future<List<Activite>> getActivites() async {
-  QuerySnapshot snapshot = 
-      await FirebaseFirestore.instance.collection('activites').get();
-
-  return snapshot.docs.map((doc) {
-    return Activite(
-      imageUrl: doc['image'],
-      titre: doc['titre'],
-      lieu: doc['lieu'],
-      prix: doc['prix'].toDouble(),
-    );
-  }).toList();
+class ActivitesTab extends StatefulWidget {
+  @override
+  _ActivitesTabState createState() => _ActivitesTabState();
 }
 
-class ActivitesTab extends StatelessWidget {
+class _ActivitesTabState extends State<ActivitesTab> {
+  String _selectedCategorie = 'Toutes'; // Catégorie sélectionnée par défaut
+  final List<String> _categories = ['Toutes', 'Sport', 'Divertissement', 'Shopping', 'Autres'];
+
+  Future<List<Activite>> getActivites() async {
+    QuerySnapshot snapshot =
+        await FirebaseFirestore.instance.collection('activites').get();
+
+    return snapshot.docs.map((doc) {
+      return Activite(
+        imageUrl: doc['imageUrl'],
+        titre: doc['titre'],
+        lieu: doc['lieu'],
+        prix: doc['prix'].toDouble(),
+        categorie: doc['categorie'],
+        nbPersonnes: doc['nbPersonnes'].toDouble(),
+      );
+    }).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<Activite>>(
-      future: getActivites(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return CircularProgressIndicator();
-        }
+    return Column(
+      children: [
+        Padding(
+          padding: EdgeInsets.all(8.0),
+          child: DropdownButton<String>(
+            isExpanded: true,
+            value: _selectedCategorie,
+            onChanged: (String? newValue) {
+              setState(() {
+                _selectedCategorie = newValue!;
+              });
+            },
+            items: _categories.map<DropdownMenuItem<String>>((String value) {
+              return DropdownMenuItem<String>(
+                value: value,
+                child: Text(value),
+              );
+            }).toList(),
+          ),
+        ),
+        Flexible(
+          child: FutureBuilder<List<Activite>>(
+            future: getActivites(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return Center(child: CircularProgressIndicator());
+              }
 
-       if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(child: CircularProgressIndicator());
-        }
+              if (snapshot.error != null) {
+                return Center(child: Text("Une erreur s'est produite"));
+              }
 
-        if (snapshot.error != null) {
-          return Center(child: Text("Une erreur s'est produite"));
-        }
+              if (!snapshot.hasData || snapshot.data == null || snapshot.data!.isEmpty) {
+                return Center(child: Text("Pas d'activités disponibles"));
+              }
 
-        if (!snapshot.hasData || snapshot.data == null || snapshot.data!.isEmpty) {
-          return Center(child: Text("Pas d'activités disponibles"));
-        }
+              List<Activite> activites = snapshot.data!;
+              if (_selectedCategorie != 'Toutes') {
+                activites = activites.where((activite) => activite.categorie == _selectedCategorie).toList();
+              }
 
-        List<Activite> activites = snapshot.data!;
-        return ListView.builder(
-          itemCount: activites.length,
-          itemBuilder: (context, index) {
-            Activite activite = activites[index];
-            return ListTile(
-              leading: Image.network(activite.imageUrl , fit: BoxFit.cover,),
-              title: Text(activite.titre),
-            
-              onTap: () {
-                // Naviguer vers une page de détail pour l'activité
-                Navigator.push(context,
-                    MaterialPageRoute(builder: (context) => DetailPage(activite)));
-              },
-            );
-          },
-        );
-      },
+              return ListView.builder(
+                itemCount: activites.length,
+                itemBuilder: (context, index) {
+                  Activite activite = activites[index];
+                  return Card(
+                    child: InkWell(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => DetailPage(activite)),
+                        );
+                      },
+                      child: Column(
+                        children: [
+                          Image.network(activite.imageUrl, fit: BoxFit.cover, height: 200),
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Text(activite.titre, style: TextStyle(fontSize: 18)),
+                          ),
+                        ],
+                      ),
+                    ),
+                    elevation: 5,
+                    margin: EdgeInsets.all(8),
+                  );
+                },
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 }

@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:project_flutter_ai/model/utilisateur.dart';
+import 'package:intl/intl.dart';
+import 'package:project_flutter_ai/userSession.dart';
+import 'package:project_flutter_ai/views/logingpage.dart';
 
 class ProfileScreen extends StatefulWidget {
   @override
@@ -20,19 +22,83 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _loadUserData();
   }
 
-  Future<void> _loadUserData() async {
-    // Remplacez par votre logique de récupération des données utilisateur
-    DocumentSnapshot userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
-    Utilisateur user = Utilisateur.fromFirestore(userDoc);
+Future<void> _updateUserData() async {
+  String username = UserSession.getUsername();
 
-    setState(() {
-      _usernameController.text = user.username;
-      _passwordController.text = user.password; // Assurez-vous de gérer le mot de passe de manière sécurisée
-      _birthdayController.text = DateFormat('yyyy-MM-dd').format(user.birthday); // Utilisez le format que vous préférez
-      _addressController.text = user.address;
-    });
+  // Créez un Map avec les données à mettre à jour
+  Map<String, dynamic> updatedData = {
+    'birthday': _birthdayController.text,
+    'address': _addressController.text,
+    'username' : _usernameController.text,
+    'password' : _passwordController.text
+  };
+
+  try {
+    QuerySnapshot snapshot = await FirebaseFirestore.instance
+    .collection('users')
+    .where('username', isEqualTo: username)
+    .get();
+
+if (snapshot.docs.isNotEmpty) {
+  String docId = snapshot.docs.first.id;
+   await FirebaseFirestore.instance
+        .collection('users')
+        .doc(docId) 
+        .update(updatedData); 
+}
+   
+
+    // Afficher un message de succès ou effectuer d'autres actions après la mise à jour
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Informations mises à jour avec succès')),
+    );
+  } catch (e) {
+    // Gérer les erreurs de mise à jour
+    print('Erreur lors de la mise à jour: $e');
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Erreur lors de la mise à jour')),
+    );
+  }
+}
+
+
+
+
+
+
+
+  Future<void> _loadUserData() async {
+     String username = UserSession.getUsername();
+
+  // Ici, interrogez Firestore pour obtenir les informations de l'utilisateur
+  // en utilisant le nom d'utilisateur
+  try{
+    QuerySnapshot snapshot = await FirebaseFirestore.instance
+      .collection('users')
+      .where('username', isEqualTo: username)
+      .get();
+
+      if (snapshot.docs.isNotEmpty) {
+  var userDoc = snapshot.docs.first.data() as Map<String, dynamic>; // Assurez-vous que c'est bien un Map
+
+  setState(() {
+    _usernameController.text = userDoc['username'] as String? ?? '';
+    _birthdayController.text = userDoc['birthday'] as String? ?? '';
+    _passwordController.text = userDoc['password'] as String? ?? ''; // Récupération du mot de passe
+    _addressController.text = userDoc['address'] as String? ?? '';
+  });
+
+  }
+  
+
+
+}catch(e){
+  print(e);
+
   }
 
+
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -46,7 +112,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             TextField(
               controller: _usernameController,
               decoration: InputDecoration(labelText: 'Nom d\'utilisateur'),
-              readOnly: true, // Rend le champ en lecture seule
             ),
             TextField(
               controller: _passwordController,
@@ -64,14 +129,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             ElevatedButton(
               onPressed: () {
-                // Fonction pour sauvegarder les données
+                _updateUserData();
               },
               child: Text('Valider'),
             ),
             ElevatedButton(
               onPressed: () {
                 // Fonction pour se déconnecter
-                Navigator.pop(context); // Retour à l'écran de connexion
+                    Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => LoginPage()));
               },
               child: Text('Se déconnecter'),
             ),
