@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "253730598173",
+    "project_id": "flutter-ai-cc95d",
+    "storage_bucket": "flutter-ai-cc95d.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:253730598173:android:43a7ce3293eb6b089685f4",
+        "android_client_info": {
+          "package_name": "com.example.project_flutter_ai"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDS8p1AeX_N6OC0JYk9Ad7CmD48jV05Vhk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
