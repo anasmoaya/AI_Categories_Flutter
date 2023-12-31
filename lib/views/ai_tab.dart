@@ -1,93 +1,75 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:tflite/tflite.dart';
+import 'package:http/http.dart' as http;
 
-class AiTab extends StatefulWidget {
+class ImageRecognitionView extends StatefulWidget {
   @override
-  _AiTabState createState() => _AiTabState();
+  _ImageRecognitionViewState createState() => _ImageRecognitionViewState();
 }
 
-class _AiTabState extends State<AiTab> {
+class _ImageRecognitionViewState extends State<ImageRecognitionView> {
   File? _image;
-  List? _recognitions;
-  bool _isLoading = false;
+  String? _result;
 
-  @override
-  void initState() {
-    super.initState();
-    _loadModel().then((val) {
+  Future pickImage() async {
+    var image = await ImagePicker().pickImage(source: ImageSource.gallery);
+    if (image != null) {
       setState(() {
-        _isLoading = false;
+        _image = File(image.path);
       });
-    });
-  }
-
-  Future<void> _loadModel() async {
-    try {
-      await Tflite.loadModel(
-        model: "assets/models/mobilenet_v1_1.0_224_quant.tflite",
-        labels: "assets/models/labels_mobilenet_quant_v1_224.txt",
-      );
-    } catch (e) {
-      print("An error occurred while loading the model: $e");
+      classifyImage(File(image.path));
     }
   }
 
-  Future _pickImage() async {
-    var image = await ImagePicker().pickImage(source: ImageSource.gallery);
-    if (image == null) return;
+Future classifyImage(File image) async {
+  String url = "https://api.imagga.com/v2/tags";
+  String authorization = "Basic YWNjXzc4OTA4MmNmMDM0MzFjNTo0Y2QyZDY2MjMxNTk1OTIwYmFkOTI3OWY5MTljYjNiNw==";
+  
+  var request = http.MultipartRequest('POST', Uri.parse(url))
+    ..headers.addAll({"Authorization": authorization})
+    ..files.add(await http.MultipartFile.fromPath('image', image.path));
+
+  var response = await request.send();
+
+  if (response.statusCode == 200) {
+    final respStr = await response.stream.bytesToString();
+    final jsonResponse = json.decode(respStr);
+    final tags = jsonResponse['result']['tags'] as List;
+    
+    if (tags.isNotEmpty) {
+      // Récupère uniquement les trois premiers tags
+      List<String> topTags = [];
+      for (var i = 0; i < tags.length && i < 3; i++) {
+        topTags.add("${tags[i]['tag']['en']} (${tags[i]['confidence'].toStringAsFixed(0)}%)");
+      }
+      setState(() {
+        _result = topTags.join(', ');
+      });
+    }
+  } else {
     setState(() {
-      _isLoading = true;
-      _image = File(image.path);
+      _result = "Erreur de prédiction : ${response.statusCode}";
     });
-    _classifyImage(_image!);
   }
-
- Future<void> _classifyImage(File image) async {
-  var recognitions = await Tflite.runModelOnImage(
-    path: image.path,
-    imageMean: 127.5,   // Ces valeurs dépendent de votre modèle spécifique
-    imageStd: 127.5,    // Utilisez les valeurs appropriées pour votre modèle
-    numResults: 1,      // Le nombre de résultats à afficher
-    threshold: 0.1,     // Seuil pour les prédictions
-    asynch: true
-  );
-  setState(() {
-    _recognitions = recognitions;
-    _isLoading = false;
-  });
 }
-
-  @override
-  void dispose() {
-    Tflite.close();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('AI Classifier'),
+        title: Text("Reconnaissance d'Images"),
       ),
-      body: _isLoading
-          ? Center(child: CircularProgressIndicator())
-          : Column(
-              children: <Widget>[
-                _image == null ? Container() : Image.file(_image!),
-                (_recognitions != null && _recognitions!.isNotEmpty)
-                    ? Text(
-                        'Prediction: ${_recognitions![0]["label"]}',
-                        style: TextStyle(color: Colors.black, fontSize: 20.0),
-                      )
-                    : Container()
-              ],
-            ),
+      body: Column(
+        children: <Widget>[
+          _image == null ? Text("Aucune image sélectionnée") : Image.file(_image!),
+          Text(_result ?? "Aucun résultat"),
+        ],
+      ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _pickImage,
-        tooltip: 'Pick Image',
-        child: Icon(Icons.image),
+        onPressed: pickImage,
+        child: Icon(Icons.add_a_photo),
       ),
     );
   }

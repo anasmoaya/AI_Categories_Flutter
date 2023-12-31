@@ -13,20 +13,22 @@ class _ActivitesTabState extends State<ActivitesTab> {
   final List<String> _categories = ['Toutes', 'Sport', 'Divertissement', 'Shopping', 'Autres'];
 
   Future<List<Activite>> getActivites() async {
-    QuerySnapshot snapshot =
-        await FirebaseFirestore.instance.collection('activites').get();
+  QuerySnapshot snapshot =
+      await FirebaseFirestore.instance.collection('activites').get();
 
-    return snapshot.docs.map((doc) {
-      return Activite(
-        imageUrl: doc['imageUrl'],
-        titre: doc['titre'],
-        lieu: doc['lieu'],
-        prix: doc['prix'].toDouble(),
-        categorie: doc['categorie'],
-        nbPersonnes: doc['nbPersonnes'].toDouble(),
-      );
-    }).toList();
-  }
+  return snapshot.docs.map((doc) {
+    // Assurez-vous de convertir correctement les champs en double ou en int
+    return Activite(
+      imageUrl: doc['imageUrl'] as String,
+      titre: doc['titre'] as String,
+      lieu: doc['lieu'] as String,
+      prix: (doc['prix'] as num).toDouble(),
+      categorie: doc['categorie'] as String,
+      nbPersonnes: (doc['nbPersonnes'] as num).toInt(),
+    );
+  }).toList();
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -59,7 +61,7 @@ class _ActivitesTabState extends State<ActivitesTab> {
               }
 
               if (snapshot.error != null) {
-                return Center(child: Text("Une erreur s'est produite"));
+                return Center(child: Text(snapshot.error.toString()));
               }
 
               if (!snapshot.hasData || snapshot.data == null || snapshot.data!.isEmpty) {

@@ -19,7 +19,7 @@ class _MainActivityState extends State<MainActivity> {
   static List<Widget> _widgetOptions = <Widget>[
     ActivitesTab(),
     AddActivityScreen(),
-    AiTab(),
+    ImageRecognitionView(),
     ProfileScreen(),
   ];
 
